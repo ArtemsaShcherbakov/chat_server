@@ -1,18 +1,61 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import { DarkTheme, Stack, ThemeProvider, type Theme } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { useEffect } from 'react';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { SessionProvider, useSession } from '@/features/auth';
+import { I18nProvider } from '@/lib/i18n';
+import { colors } from '@/ui';
 
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+const navigationTheme: Theme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: colors.primary,
+    background: colors.background,
+    card: colors.backgroundElement,
+    text: colors.text,
+    border: colors.backgroundSelected,
+  },
+};
+
+const RootNavigator = () => {
+  const { status } = useSession();
+  const isLoading = status === 'loading';
+
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hide();
+    }
+  }, [isLoading]);
+
+  // Keep the native splash screen up until the stored session is read
+  if (isLoading) {
+    return null;
+  }
+
+  const isSignedIn = status === 'signedIn';
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={isSignedIn}>
+        <Stack.Screen name="(main)" />
+      </Stack.Protected>
+      <Stack.Protected guard={!isSignedIn}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+    </Stack>
   );
-}
+};
+
+const RootLayout = () => (
+  <ThemeProvider value={navigationTheme}>
+    <I18nProvider>
+      <SessionProvider>
+        <RootNavigator />
+      </SessionProvider>
+    </I18nProvider>
+  </ThemeProvider>
+);
+
+export default RootLayout;

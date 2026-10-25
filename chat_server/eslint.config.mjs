@@ -29,7 +29,14 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
+
+      // Arrow functions
+      'prefer-arrow-callback': 'error',
+      'arrow-body-style': ['error', 'as-needed'],
+      'arrow-parens': ['error', 'always'],
+      'implicit-arrow-linebreak': ['error', 'beside'],
+      'no-confusing-arrow': ['error', { allowParens: true }],
     },
   },
 );
