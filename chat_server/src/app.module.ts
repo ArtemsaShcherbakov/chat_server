@@ -1,28 +1,34 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule, type ConfigType } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { Chats, LinkChats, Messages, Users } from './entities';
+import { AuthModule } from './auth/auth.module';
+import { appConfig, authConfig, databaseConfig } from './config/configuration';
+import { envValidationSchema } from './config/env.validation';
+import { entities } from './database/entities';
+import { SharedModule } from './shared/shared.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [appConfig, databaseConfig, authConfig],
+      validationSchema: envValidationSchema,
+    }),
     TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      inject: [databaseConfig.KEY],
+      useFactory: (db: ConfigType<typeof databaseConfig>) => ({
         type: 'postgres',
-        host: config.get<string>('DB_HOST'),
-        port: Number(config.get('DB_PORT')),
-        username: config.get<string>('DB_USERNAME'),
-        password: config.get<string>('DB_PASSWORD'),
-        database: config.get<string>('DB_NAME'),
-        entities: [Users, Chats, LinkChats, Messages],
-        synchronize: config.get('NODE_ENV') !== 'production',
+        host: db.host,
+        port: db.port,
+        username: db.username,
+        password: db.password,
+        database: db.name,
+        entities,
+        synchronize: db.synchronize,
       }),
     }),
+    SharedModule,
+    AuthModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
